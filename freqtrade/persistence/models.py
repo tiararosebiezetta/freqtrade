@@ -17,6 +17,7 @@ from freqtrade.constants import DATETIME_PRINT_FORMAT, NON_OPEN_EXCHANGE_STATES
 from freqtrade.enums import SellType, TradingMode
 from freqtrade.exceptions import DependencyException, OperationalException
 from freqtrade.leverage import interest
+from freqtrade.leverage import liquidation_price
 from freqtrade.misc import safe_value_fallback
 from freqtrade.persistence.migrations import check_migrate
 
@@ -323,7 +324,7 @@ class LocalTrade():
         for key in kwargs:
             setattr(self, key, kwargs[key])
         if self.isolated_liq:
-            self.set_isolated_liq(self.isolated_liq)
+            self.set_isolated_liq(isolated_liq=self.isolated_liq)
         self.recalc_open_trade_value()
         # TODO-lev: Throw exception if on margin and interest_rate is none
 
@@ -350,11 +351,19 @@ class LocalTrade():
             self.stop_loss_pct = -1 * abs(percent)
         self.stoploss_last_update = datetime.utcnow()
 
-    def set_isolated_liq(self, isolated_liq: float):
+    def set_isolated_liq(self, **k):
         """
             Method you should use to set self.liquidation price.
             Assures stop_loss is not passed the liquidation price
         """
+        if k['isolated_liq']:
+            isolated_liq: float = k['isolated_liq']
+        else:
+            isolated_liq: float = liquidation_price(
+                exchange=self.exchange_name,
+                **k
+            )
+
         if self.stop_loss is not None:
             if self.is_short:
                 self.stop_loss = min(self.stop_loss, isolated_liq)
