@@ -3288,3 +3288,21 @@ def test_get_max_leverage(default_conf, mocker, pair, nominal_value, max_lev):
     # Binance has a different method of getting the max leverage
     exchange = get_patched_exchange(mocker, default_conf, id="kraken")
     assert exchange.get_max_leverage(pair, nominal_value) == max_lev
+
+
+def test_get_liquidation_price(mocker, default_conf):
+
+    api_mock = MagicMock()
+    api_mock.fetch_positions = MagicMock()
+    type(api_mock).has = PropertyMock(return_value={'fetchPositions': True})
+    default_conf['dry_run'] = False
+
+    ccxt_exceptionhandlers(
+        mocker,
+        default_conf,
+        api_mock,
+        "binance",
+        "get_liquidation_price",
+        "fetch_positions",
+        pair="XRP/USDT"
+    )
