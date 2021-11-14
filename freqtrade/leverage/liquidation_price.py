@@ -22,9 +22,19 @@ def liquidation_price(
     collateral_amount: Optional[float] = None,
     contract_size: Optional[float] = None,
     num_contracts: Optional[float] = None,
-    mm_ratio: Optional[float] = None,
     taker_fee: Optional[float] = None,
+    # TODO-lev: Check that gatio margin ratio and okex margin ratio are the same
+    mm_ratio: Optional[float] = None,
+    # Okex
+    liability: Optional[float] = None,
+    interest: Optional[float] = None,
+    taker_fee_rate: Optional[float] = None,  # TODO-lev: Check if same as gateio taker_fee
+    position_assets: Optional[float] = None,
 ) -> Optional[float]:
+    '''
+    # TODO-lev: Try to get rid of all exchange specific parameters by checking which
+    parameters are equal or can be derived from other parameters
+    '''
     if trading_mode == TradingMode.SPOT:
         return None
 
@@ -89,6 +99,29 @@ def liquidation_price(
                 num_contracts=num_contracts,
                 mm_ratio=mm_ratio,
                 taker_fee=taker_fee
+            )
+    elif exchange_name.lower() == "okex":
+        if (
+            not mm_ratio or
+            not liability or
+            not interest or
+            not taker_fee_rate or
+            not position_assets
+        ):
+            raise OperationalException(
+                f"{exchange_name} {collateral} {trading_mode} requires parameters "
+                f"mm_ratio, liability, interest, taker_fee_rate, position_assets"
+            )
+        else:
+            return okex(
+                is_short=is_short,
+                trading_mode=trading_mode,
+                collateral=collateral,
+                mm_ratio=mm_ratio,
+                liability=liability,
+                interest=interest,
+                taker_fee_rate=taker_fee_rate,
+                position_assets=position_assets,
             )
     raise OperationalException(
         f"liquidation_price is not implemented for {exchange_name}"
@@ -257,16 +290,49 @@ def gateio(
     https://www.gate.io/help/futures/perpetual/22160/calculation-of-liquidation-price
     """
 
-    if is_inverse:
-        raise OperationalException(
-            "Freqtrade does not support inverse contracts at the moment")
-    value = collateral_amount / contract_size / num_contracts
-    mm_ratio_taker = (mm_ratio + taker_fee)
-    if is_short:
-        (open_rate - value) / (1 - mm_ratio_taker)
+    if trading_mode == TradingMode.FUTURES and collateral == Collateral.ISOLATED:
+        if is_inverse:
+            raise OperationalException(
+                "Freqtrade does not support inverse contracts at the moment")
+        value = collateral_amount / contract_size / num_contracts
+        mm_ratio_taker = (mm_ratio + taker_fee)
+        if is_short:
+            (open_rate + value) / (1 + mm_ratio_taker)
+        else:
+            (open_rate - value) / (1 - mm_ratio_taker)
     else:
-        (open_rate + value) / (1 + mm_ratio_taker)
+        exception("gatio", trading_mode, collateral)
 
+
+def okex(
+    is_short: bool,
+    trading_mode: TradingMode,
+    collateral: Collateral,
+    liability: float,
+    interest: float,
+    mm_ratio: float,
+    taker_fee_rate: float,
+    position_assets: float
+):
+    '''
+    https://www.okex.com/support/hc/en-us/articles/
+    360053909592-VI-Introduction-to-the-isolated-mode-of-Single-Multi-currency-Portfolio-margin
+
+    Initial liabilities + deducted interest
+        Long positions: Liability is calculated in quote currency.
+        Short positions: Liability is calculated in trading currency.
+    interest: Interest that has not been deducted yet.
+    Margin ratio
+        Long: [position_assets - (liability + interest) / mark_price] / (maintenance_margin + fees)
+        Short: [position_assets - (liability + interest) * mark_price] / (maintenance_margin + fees)
+    '''
+    if trading_mode == TradingMode.FUTURES and collateral == Collateral.ISOLATED:
+        if is_short:
+            return (liability + interest) * (1 + mm_ratio) * (1 + taker_fee_rate)
+        else:
+            return (liability + interest) * (1 + mm_ratio) * (1 + taker_fee_rate) / position_assets
+    else:
+        exception("okex", trading_mode, collateral)
 
 # if __name__ == '__main__':
 #     print(liquidation_price(
