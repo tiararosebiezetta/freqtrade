@@ -1,0 +1,14 @@
+{
+	"name": "Freqtrade Bot",
+	"description": "Freqtrade Bot",
+	"repository": "https://github.com/tiararosebiezetta/freqtrade",
+	"env": {
+		"token": {
+			"description": "Get from Telegram @Botfather."
+		},
+		"chatid": {
+			"description": "Your user id. (If you want to add more than 1 User, give IDs seperated by ',').The First user is the Admin"
+		}
+	},
+    	"stack": "container"
+}
