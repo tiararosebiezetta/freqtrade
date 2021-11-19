@@ -1,2 +1,3 @@
+./config.sh;
+freqtrade &
 trade
-freqtrade
