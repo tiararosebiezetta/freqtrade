@@ -7,7 +7,7 @@
 			"description": "Get from Telegram @Botfather."
 		},
 		"chatid": {
-			"description": "Your user id. (If you want to add more than 1 User, give IDs seperated by ',').The First user is the Admin"
+			"description": "Your user id."
 		}
 	},
     	"stack": "container"
