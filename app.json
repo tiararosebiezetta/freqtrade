@@ -7,7 +7,7 @@
 			"description": "Get from Telegram @Botfather."
 		},
 		"chatid": {
-			"description": "Your user id."
+			"description": "Your user id or group id"
 		}
 	},
     	"stack": "container"
