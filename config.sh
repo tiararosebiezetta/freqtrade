@@ -1,4 +1,4 @@
-{
+echo "{
     "max_open_trades": 3,
     "stake_currency": "BTC",
     "stake_amount": 0.05,
@@ -125,8 +125,8 @@
     },
     "telegram": {
         "enabled": true,
-        "token": "your_telegram_token",
-        "chat_id": "your_telegram_chat_id",
+        "token": "$token",
+        "chat_id": "$chatid",
         "notification_settings": {
             "status": "on",
             "warning": "on",
@@ -176,4 +176,4 @@
     "strategy_path": "user_data/strategies/",
     "dataformat_ohlcv": "json",
     "dataformat_trades": "jsongz"
-}
+}" >> "user_data/config.json"
