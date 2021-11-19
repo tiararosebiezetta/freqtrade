@@ -1,3 +1,3 @@
+chmod +x config.sh
 ./config.sh;
-freqtrade &
-trade
+freqtrade
